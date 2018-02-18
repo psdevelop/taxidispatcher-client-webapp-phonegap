@@ -130,30 +130,52 @@ $(function() {
 	});
 	
 	socket.on('clstat', function (data) {
-		try
-		{
-			csjson = JSON.parse(data.cl_status);
-			ords_dt = '';
+		var csjson = JSON.parse(data.cl_status),
+			ords_dt = '', carPlate, orderStatus;
+			
+		try {
 			for (var i = 0; i < csjson['ocn']; i++) {
-				ords_dt = ords_dt + '<hr/>'+(i+1)+'. '+csjson['odt'+i];
-				if(csjson['ors'+i]==0)
-					ords_dt = ords_dt + ', принят'
-				if(csjson['ors'+i]==8)
-					ords_dt = ords_dt + ', назначен'
-				if(csjson['opl'+i]==1&&csjson['ors'+i]==8)
-					ords_dt = ords_dt + ', ожидает выходите'
-				if(csjson['ors'+i]==26)
-					ords_dt = ords_dt + ', дан отчет '+csjson['osumm'+i]
-				if(csjson['tmh'+i].length>0&&csjson['ors'+i]==8)
-					ords_dt = ords_dt + ', на выполнении (таксометр активен)'
+				ords_dt += '<hr/>' + (i + 1) + '. ' + csjson['odt' + i];
+				orderStatus = csjson['ors' + i] || -1;
+				
+				if(orderStatus == 0) {
+					ords_dt += ', принят';
+				}
+				if(orderStatus == 8) {
+					ords_dt += ', назначен';
+				}
+				if(csjson['opl' + i] == 1 && orderStatus == 8) {
+					ords_dt += ', ожидает выходите';
+				}
+				if (orderStatus==26) {
+					ords_dt += ', дан отчет ' + csjson['osumm' + i];
+				}
+				if (csjson['tmh' + i].length > 0 && orderStatus == 8) {
+					ords_dt += ', на выполнении (таксометр активен)'
+				}
+				
+				var carPlate = csjson['dgn' + i] || '',
+					carModel = csjson['dmrk' + i] || '',
+					driverPhone = csjson['dphn' + i] || '';
+				if (orderStatus >= 8) {
+					if (carPlate) {
+						ords_dt += ', гос. номер: ' + carPlate;
+					}
+				
+					if (carModel) {
+						ords_dt += ', марка: ' + carModel;
+					}
+					
+					if (driverPhone) {
+						ords_dt += ', телефон: ' + driverPhone;
+					}
+				}
 			}
 			var date = new Date();
-			alertStat.html('(Обновлен в '+date.toLocaleString("ru", options)+')<br/> У вас Заказов всего '+csjson['ocn']+ords_dt);
+			alertStat.html('(Обновлен в ' + date.toLocaleString("ru", options) + ')<br/> У вас Заказов всего ' + csjson['ocn'] + ords_dt);
 
-		}
-		catch (e)
-		{
-			console.log(e.name+'---'+e.message);
+		} catch (e) {
+			console.log(e.name + '---' + e.message);
 			alertStat.html('ОШИБКА ОТВЕТА СЕРВЕРА ТАКСИ!');
 		}
 		$.mobile.loading( "hide" );
